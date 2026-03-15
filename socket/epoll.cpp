@@ -12,27 +12,27 @@ Epoll::~Epoll()
     close(epfd);
 }
 
-bool Epoll::add(int fd, uint32_t event)
+bool Epoll::add(Channel* channel)
 {
     epoll_event ev{};
-    ev.events = event;
-    ev.data.fd = fd;
+    ev.events = channel->getEvents();
+    ev.data.ptr = channel;
 
-    return epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == 0;
+    return epoll_ctl(epfd, EPOLL_CTL_ADD, channel->getFd(), &ev) == 0;
 }
 
-bool Epoll::mod(int fd, uint32_t event)
+bool Epoll::mod(Channel* channel)
 {
     epoll_event ev{};
-    ev.events = event;
-    ev.data.fd = fd;
+    ev.events = channel->getEvents();
+    ev.data.ptr = channel;
 
-    return epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev) == 0;
+    return epoll_ctl(epfd, EPOLL_CTL_MOD, channel->getFd(), &ev) == 0;
 }
 
-bool Epoll::del(int fd)
+bool Epoll::del(Channel* channel)
 {
-    return epoll_ctl(epfd, EPOLL_CTL_DEL, fd, nullptr) == 0;
+    return epoll_ctl(epfd, EPOLL_CTL_DEL, channel->getFd(), nullptr) == 0;
 }
 
 int Epoll::wait(int timeout)
@@ -40,7 +40,12 @@ int Epoll::wait(int timeout)
     return epoll_wait(epfd, events.data(), events.size(), timeout);
 }
 
-epoll_event Epoll::getEvent(int i)
+epoll_event Epoll::getEvent(int i) const
 {
     return events[i];
+}
+
+Channel* Epoll::getChannel(int i) const
+{
+    return static_cast<Channel*>(events[i].data.ptr);
 }

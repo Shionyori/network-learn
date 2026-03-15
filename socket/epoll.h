@@ -2,6 +2,7 @@
 
 #include <sys/epoll.h>
 #include <vector>
+#include "channel.h"
 
 class Epoll {
 private:
@@ -12,11 +13,12 @@ public:
     Epoll(int maxEvents = 1024);
     ~Epoll();
 
-    bool add(int fd, uint32_t event);
-    bool mod(int fd, uint32_t event);
-    bool del(int fd);
+    bool add(Channel* channel);
+    bool mod(Channel* channel);
+    bool del(Channel* channel);
 
     int wait(int timeout = -1);
 
-    epoll_event getEvent(int i);
+    epoll_event getEvent(int i) const;
+    Channel* getChannel(int i) const;
 };

@@ -18,8 +18,8 @@ target_include_directories(mysocket PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/socket
 )
 
-add_executable(nl-server src/server.cpp)
+add_executable(nl-server src/demo_server.cpp)
 target_link_libraries(nl-server PRIVATE mysocket)
 
-add_executable(nl-client src/client.cpp)
+add_executable(nl-client src/demo_client.cpp)
 target_link_libraries(nl-client PRIVATE mysocket)
