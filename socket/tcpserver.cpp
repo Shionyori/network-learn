@@ -1,5 +1,6 @@
 #include "tcpserver.h"
 #include <iostream>
+#include "util.h"
 
 TcpServer::TcpServer() : ep(1024) {}
 
@@ -15,6 +16,8 @@ bool TcpServer::start(const std::string& ip, int port)
         std::cerr << "Server create failed\n";
         return false;
     }
+
+    set_non_blocking(server.getFd()); // 设置服务端套接字为非阻塞模式
 
     if (!server.bind(ip, port))
     {
@@ -52,6 +55,8 @@ void TcpServer::run()
 
                 if(client.isValid())
                 {
+                    set_non_blocking(client.getFd()); // 设置客户端套接字为非阻塞模式
+
                     std::cout << "New client connected: " << client.getFd() << std::endl;
                     ep.add(client.getFd(), EPOLLIN); // epoll 监听客户端套接字的可读事件
 
