@@ -10,6 +10,7 @@ include_directories(socket)
 add_library(mysocket STATIC
     socket/socket.cpp
     socket/epoll.cpp
+    socket/eventloop.cpp
     socket/tcpclient.cpp
     socket/tcpserver.cpp
 )

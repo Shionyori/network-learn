@@ -1,17 +1,17 @@
 #pragma once
 
 #include "socket.h"
-#include "epoll.h"
 #include <unordered_map>
 #include "channel.h"
 #include <memory>
+#include "eventloop.h"
 
 using namespace nl;
 
 class TcpServer {
 private:
     Socket server;
-    Epoll ep;
+    EventLoop loop;
 
     std::unique_ptr<Channel> serverChannel;
     

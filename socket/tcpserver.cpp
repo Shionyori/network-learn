@@ -2,11 +2,17 @@
 #include <iostream>
 #include "util.h"
 
-TcpServer::TcpServer() : ep(1024), serverChannel(nullptr) {}
+TcpServer::TcpServer() : loop(1024), serverChannel(nullptr) {}
 
 TcpServer::~TcpServer()
 {
-    server.close();
+    for (auto& [fd, channel] : clientChannels) {
+        loop.removeChannel(channel.get());
+    }
+
+    if (server.isValid()) {
+        server.close();
+    }
 }
 
 bool TcpServer::start(const std::string& ip, int port)
@@ -35,8 +41,7 @@ bool TcpServer::start(const std::string& ip, int port)
     serverChannel->setEvents(EPOLLIN); // 监听可读事件
     serverChannel->setReadCallback([this]() { handleAccept(); }); // 设置可读事件回调函数
 
-    // epoll 监听服务端套接字的可读事件
-    ep.add(serverChannel.get());
+    loop.addChannel(serverChannel.get());
 
     std::cout << "Server listening on " << ip << ":" << port << std::endl;
     return true;
@@ -44,17 +49,7 @@ bool TcpServer::start(const std::string& ip, int port)
 
 void TcpServer::run()
 {
-    while(true)
-    {
-        int n = ep.wait();
-
-        for (int i = 0; i < n; ++i)
-        {
-            Channel* channel = ep.getChannel(i); // 获取就绪事件的 Channel
-            channel->setRevents(ep.getEvent(i).events); // 设置就绪事件的类型
-            channel->handleEvent(); // 处理事件（调用相应的回调函数）
-        }
-    }
+    loop.loop();
 }
 
 void TcpServer::handleAccept()
@@ -75,8 +70,7 @@ void TcpServer::handleAccept()
     clientChannel->setEvents(EPOLLIN); // 监听可读事件
     clientChannel->setReadCallback([this, clientFd]() { handleRead(clientFd); }); // 设置可读事件回调函数
 
-    // epoll 监听客户端套接字的可读事件
-    ep.add(clientChannel.get());
+    loop.addChannel(clientChannel.get());
 
     // 将客户端 Socket 和 Channel 存储到容器中
     clients[clientFd] = std::move(client);
@@ -104,7 +98,7 @@ void TcpServer::handleRead(int clientFd)
 
 void TcpServer::closeClient(int clientFd)
 {
-    ep.del(clientChannels[clientFd].get()); // 从 epoll 中删除客户端 Channel
+    loop.removeChannel(clientChannels[clientFd].get());
     clientChannels.erase(clientFd); // 从容器中删除客户端 Channel
     clients.erase(clientFd); // 从容器中删除客户端 Socket
 }
