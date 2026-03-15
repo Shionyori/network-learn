@@ -1,5 +1,6 @@
 #include "tcpserver.h"
 #include <iostream>
+#include <cerrno>
 #include "util.h"
 
 TcpServer::TcpServer() : loop(1024), serverChannel(nullptr) {}
@@ -75,22 +76,29 @@ void TcpServer::handleAccept()
     // 将客户端 Socket 和 Channel 存储到容器中
     clients[clientFd] = std::move(client);
     clientChannels[clientFd] = std::move(clientChannel);
+    clientBuffers.emplace(clientFd, Buffer());
 }
 
 void TcpServer::handleRead(int clientFd)
 {
-    char buffer[1024];
-
-    ssize_t bytesRead = clients[clientFd].recv(buffer, sizeof(buffer));
+    int savedErrno = 0;
+    Buffer& buffer = clientBuffers[clientFd];
+    ssize_t bytesRead = buffer.readFd(clients[clientFd].getFd(), &savedErrno);
     if (bytesRead > 0)
     {
-        std::string data(buffer, bytesRead);
+        std::string data(buffer.peek(), buffer.readableBytes());
         std::cout << "Received from client " << clientFd << ": " << data << std::endl;
 
         clients[clientFd].send("Echo: " + data); // 回显数据给客户端
+        buffer.retrieveAll();
     }
     else
     {
+        if (bytesRead < 0 && (savedErrno == EAGAIN || savedErrno == EWOULDBLOCK))
+        {
+            return;
+        }
+
         std::cout << "Client " << clientFd << " disconnected\n";
         closeClient(clientFd);
     }
@@ -101,4 +109,5 @@ void TcpServer::closeClient(int clientFd)
     loop.removeChannel(clientChannels[clientFd].get());
     clientChannels.erase(clientFd); // 从容器中删除客户端 Channel
     clients.erase(clientFd); // 从容器中删除客户端 Socket
+    clientBuffers.erase(clientFd); // 从容器中删除客户端 Buffer
 }

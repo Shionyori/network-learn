@@ -5,6 +5,7 @@
 #include "channel.h"
 #include <memory>
 #include "eventloop.h"
+#include "buffer.h"
 
 using namespace nl;
 
@@ -17,6 +18,7 @@ private:
     
     std::unordered_map<int, Socket> clients;
     std::unordered_map<int, std::unique_ptr<Channel>> clientChannels;
+    std::unordered_map<int, Buffer> clientBuffers;
 
 public:
     TcpServer();
