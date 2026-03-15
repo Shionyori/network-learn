@@ -1,0 +1,62 @@
+#pragma once
+
+#include <string>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+namespace nl {
+
+class Socket {
+private:
+    int sockfd;
+
+public:
+    Socket() : sockfd(-1) {}
+    Socket(int fd) : sockfd(fd) {}
+
+    // 禁止拷贝
+    Socket(const Socket&) = delete;
+    Socket& operator=(const Socket&) = delete;
+
+    // 允许拷贝
+    Socket(Socket && other) : sockfd(other.sockfd) { other.sockfd = -1; }
+    Socket& operator=(Socket&& other) {
+        if (this != &other) {
+            close();
+            sockfd = other.sockfd;
+            other.sockfd = -1;
+        }
+        return *this;
+    }
+
+    ~Socket() { close(); }
+
+    bool create(int domain, int type, int protocol);
+
+    bool bind(const std::string &ip, int port);
+    bool listen(int backlog);
+    Socket accept();
+
+    bool connect(const std::string &ip, int port);
+
+    ssize_t send(const void* data, size_t len, int flags = 0);
+    ssize_t send(const std::string& data, int flags = 0);
+
+    ssize_t recv(void* buf, size_t len, int flags = 0);
+    std::string recv(size_t max_len = 1024, int flags = 0);
+
+    // 工具函数
+    void close() {
+        if (sockfd >= 0) {
+            ::close(sockfd);
+            sockfd = -1;
+        }
+    }
+
+    bool isValid() const { return sockfd >= 0; }
+
+    int getFd() const { return sockfd; }
+};
+
+}
