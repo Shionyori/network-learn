@@ -5,16 +5,7 @@
 
 TcpServer::TcpServer() : loop(1024), serverChannel(nullptr) {}
 
-TcpServer::~TcpServer()
-{
-    for (auto& [fd, channel] : clientChannels) {
-        loop.removeChannel(channel.get());
-    }
-
-    if (server.isValid()) {
-        server.close();
-    }
-}
+TcpServer::~TcpServer() = default; // Connection 的析构会自动清理资源，RAII 管理连接对象
 
 bool TcpServer::start(const std::string& ip, int port)
 {
@@ -24,7 +15,7 @@ bool TcpServer::start(const std::string& ip, int port)
         return false;
     }
 
-    set_non_blocking(server.getFd()); // 设置服务端套接字为非阻塞模式
+    set_non_blocking(server.getFd()); // 设置服务器套接字为非阻塞模式
 
     if (!server.bind(ip, port))
     {
@@ -37,11 +28,11 @@ bool TcpServer::start(const std::string& ip, int port)
         return false;
     }
 
-    // 创建服务端 Channel，并设置事件和回调函数
     serverChannel = std::make_unique<Channel>(server.getFd(), &server);
-    serverChannel->setEvents(EPOLLIN); // 监听可读事件
-    serverChannel->setReadCallback([this]() { handleAccept(); }); // 设置可读事件回调函数
-
+    serverChannel->setEvents(EPOLLIN); // 监听可读事件（即有新连接到来）
+    serverChannel->setReadCallback([this]() { this->handleAccept(); }); // 绑定回调
+    
+    // epoll 添加服务器套接字
     loop.addChannel(serverChannel.get());
 
     std::cout << "Server listening on " << ip << ":" << port << std::endl;
@@ -55,59 +46,63 @@ void TcpServer::run()
 
 void TcpServer::handleAccept()
 {
-    Socket client = server.accept();
-    if (!client.isValid())
+    while (true)
     {
-        return;
-    }
-
-    int clientFd = client.getFd();
-    std::cout << "New client connected: " << clientFd << std::endl;
-
-    set_non_blocking(clientFd); // 设置客户端套接字为非阻塞模式
-
-    // 创建客户端 Channel，并设置事件和回调函数
-    auto clientChannel = std::make_unique<Channel>(clientFd);
-    clientChannel->setEvents(EPOLLIN); // 监听可读事件
-    clientChannel->setReadCallback([this, clientFd]() { handleRead(clientFd); }); // 设置可读事件回调函数
-
-    loop.addChannel(clientChannel.get());
-
-    // 将客户端 Socket 和 Channel 存储到容器中
-    clients[clientFd] = std::move(client);
-    clientChannels[clientFd] = std::move(clientChannel);
-    clientBuffers.emplace(clientFd, Buffer());
-}
-
-void TcpServer::handleRead(int clientFd)
-{
-    int savedErrno = 0;
-    Buffer& buffer = clientBuffers[clientFd];
-    ssize_t bytesRead = buffer.readFd(clients[clientFd].getFd(), &savedErrno);
-    if (bytesRead > 0)
-    {
-        std::string data(buffer.peek(), buffer.readableBytes());
-        std::cout << "Received from client " << clientFd << ": " << data << std::endl;
-
-        clients[clientFd].send("Echo: " + data); // 回显数据给客户端
-        buffer.retrieveAll();
-    }
-    else
-    {
-        if (bytesRead < 0 && (savedErrno == EAGAIN || savedErrno == EWOULDBLOCK))
+        Socket client = server.accept();
+        if (!client.isValid())
         {
-            return;
+            break;
         }
 
-        std::cout << "Client " << clientFd << " disconnected\n";
-        closeClient(clientFd);
+        set_non_blocking(client.getFd()); // 设置客户端套接字为非阻塞模式
+
+        int clientFd = client.getFd();
+        std::cout << "New client connected: " << clientFd << std::endl;
+
+        auto connection = std::make_shared<Connection>(&loop, std::move(client));
+
+        // 设置回调
+        connection->setConnectionCallback([this](Connection* conn) { onConnection(conn); });
+        connection->setMessageCallback([this](Connection* conn, Buffer* buffer) { onMessage(conn, buffer); });
+        connection->setCloseCallback([this](Connection* conn) { onClose(conn); });
+
+        // 先存储，再建立连接，避免回调期间查不到该连接。
+        Connection* connPtr = connection.get();
+        connections[clientFd] = connection;
+
+        // 建立连接（注册事件，调用用户回调）
+        connPtr->connectEstablished();
+        
     }
 }
 
-void TcpServer::closeClient(int clientFd)
+void TcpServer::onConnection(Connection* conn)
 {
-    loop.removeChannel(clientChannels[clientFd].get());
-    clientChannels.erase(clientFd); // 从容器中删除客户端 Channel
-    clients.erase(clientFd); // 从容器中删除客户端 Socket
-    clientBuffers.erase(clientFd); // 从容器中删除客户端 Buffer
+    if (connectionCallback)
+    {
+        connectionCallback(conn);
+    }
+}
+
+void TcpServer::onMessage(Connection* conn, Buffer* buffer)
+{
+    if (messageCallback)
+    {
+        messageCallback(conn, buffer);
+    }
+}
+
+void TcpServer::onClose(Connection* conn)
+{
+    int fd = conn->fd();
+
+    if (closeCallback)
+    {
+        closeCallback(conn);
+    }
+
+    // 不能在 Connection 自己的关闭回调栈里直接销毁自身对象
+    loop.queueInLoop([this, fd]() {
+        connections.erase(fd);
+    });
 }
