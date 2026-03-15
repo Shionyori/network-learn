@@ -1,18 +1,22 @@
 #pragma once
 
 #include "socket.h"
-#include <functional>
+#include "epoll.h"
+#include <unordered_map>
 
 using namespace nl;
 
 class TcpServer {
 private:
     Socket server;
+    Epoll ep;
+
+    std::unordered_map<int, Socket> clients;
 
 public:
-    TcpServer() = default;
+    TcpServer();
     ~TcpServer();
 
     bool start(const std::string& ip, int port);
-    void run(std::function<void(Socket)> handler);
+    void run();
 };
