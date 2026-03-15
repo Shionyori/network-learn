@@ -9,6 +9,8 @@ include_directories(socket)
 
 add_library(mysocket STATIC
     socket/socket.cpp
+    socket/tcpserver.cpp
+    socket/tcpclient.cpp
 )
 
 target_include_directories(mysocket PUBLIC
