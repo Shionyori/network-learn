@@ -11,6 +11,8 @@ add_library(mysocket STATIC
     socket/socket.cpp
     socket/epoll.cpp
     socket/eventloop.cpp
+    socket/eventloopthread.cpp
+    socket/eventloopthreadpool.cpp
     socket/buffer.cpp
     socket/connection.cpp
     socket/tcpclient.cpp

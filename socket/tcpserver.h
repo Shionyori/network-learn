@@ -6,23 +6,29 @@
 #include "channel.h"
 #include "eventloop.h"
 #include "connection.h"
+#include "buffer.h"
+#include "eventloopthreadpool.h"
+#include <cstddef>
 
 using namespace nl;
 
 class TcpServer {
 private:
     Socket server;
-    EventLoop loop;
+    EventLoop mainloop;
+    size_t numThreads;
 
     std::unique_ptr<Channel> serverChannel;
     std::unordered_map<int, std::shared_ptr<Connection>> connections;
+
+    std::unique_ptr<EventLoopThreadPool> threadPool;
 
     Connection::ConnectionCallback connectionCallback;
     Connection::MessageCallback messageCallback;
     Connection::CloseCallback closeCallback;
 
 public:
-    TcpServer();
+    TcpServer(size_t numThreads = 0);
     ~TcpServer();
 
     bool start(const std::string& ip, int port);
