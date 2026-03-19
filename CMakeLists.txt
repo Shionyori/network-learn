@@ -5,26 +5,38 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(network-learn)
 
-include_directories(socket)
-
-add_library(mysocket STATIC
-    socket/socket.cpp
-    socket/epoll.cpp
-    socket/eventloop.cpp
-    socket/eventloopthread.cpp
-    socket/eventloopthreadpool.cpp
-    socket/buffer.cpp
-    socket/connection.cpp
-    socket/tcpclient.cpp
-    socket/tcpserver.cpp
+set(NL_INCLUDE_DIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/socket
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/tcp
 )
 
-target_include_directories(mysocket PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/socket
+add_library(nl-core STATIC
+    lib/core/buffer.cpp
+    lib/core/channel.h
+    lib/core/connection.cpp
+    lib/core/eventloop.cpp
+    lib/core/eventloopthread.cpp
+    lib/core/eventloopthreadpool.cpp
+    lib/core/epoll.cpp
 )
+target_include_directories(nl-core PUBLIC ${NL_INCLUDE_DIRS})
 
-add_executable(nl-server src/demo_server.cpp)
-target_link_libraries(nl-server PRIVATE mysocket)
+add_library(nl-socket STATIC 
+    lib/socket/socket.cpp
+)
+target_include_directories(nl-socket PUBLIC ${NL_INCLUDE_DIRS})
 
-add_executable(nl-client src/demo_client.cpp)
-target_link_libraries(nl-client PRIVATE mysocket)
+add_library(nl-tcp STATIC
+    lib/tcp/tcpserver.cpp
+    lib/tcp/tcpclient.cpp
+)
+target_link_libraries(nl-tcp PRIVATE nl-core nl-socket)
+target_include_directories(nl-tcp PUBLIC ${NL_INCLUDE_DIRS})
+
+add_executable(nl-tcpserver src/tcp/demo_tcpserver.cpp)
+target_link_libraries(nl-tcpserver PRIVATE nl-tcp)
+
+add_executable(nl-tcpclient src/tcp/demo_tcpclient.cpp)
+target_link_libraries(nl-tcpclient PRIVATE nl-tcp)
