@@ -40,3 +40,7 @@ target_link_libraries(nl-tcpserver PRIVATE nl-tcp)
 
 add_executable(nl-tcpclient src/tcp/demo_tcpclient.cpp)
 target_link_libraries(nl-tcpclient PRIVATE nl-tcp)
+
+add_executable(nl-udpserver src/udp/server.cpp)
+
+add_executable(nl-udpclient src/udp/client.cpp)
