@@ -31,6 +31,9 @@ public:
     TcpServer(size_t numThreads = 0);
     ~TcpServer();
 
+    TcpServer(const TcpServer&) = delete;
+    TcpServer& operator=(const TcpServer&) = delete;
+
     bool start(const std::string& ip, int port);
     void run();
 

@@ -12,25 +12,15 @@ private:
     int sockfd;
 
 public:
-    Socket() : sockfd(-1) {}
-    Socket(int fd) : sockfd(fd) {}
+    Socket();
+    Socket(int fd);
+    
+    ~Socket();
 
-    // 禁止拷贝
     Socket(const Socket&) = delete;
     Socket& operator=(const Socket&) = delete;
-
-    // 允许拷贝
-    Socket(Socket && other) : sockfd(other.sockfd) { other.sockfd = -1; }
-    Socket& operator=(Socket&& other) {
-        if (this != &other) {
-            close();
-            sockfd = other.sockfd;
-            other.sockfd = -1;
-        }
-        return *this;
-    }
-
-    ~Socket() { close(); }
+    Socket(Socket && other);
+    Socket& operator=(Socket&& other);
 
     bool create(int domain, int type, int protocol);
 

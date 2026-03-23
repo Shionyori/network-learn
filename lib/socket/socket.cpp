@@ -2,6 +2,25 @@
 
 namespace nl {
 
+Socket::Socket() : sockfd(-1) {}
+
+Socket::Socket(int fd) : sockfd(fd) {}
+
+Socket::~Socket() { close(); }
+
+Socket::Socket(Socket&& other) : sockfd(other.sockfd) {
+    other.sockfd = -1;
+}
+
+Socket& Socket::operator=(Socket&& other) {
+    if (this != &other) {
+        close();
+        sockfd = other.sockfd;
+        other.sockfd = -1;
+    }
+    return *this;
+}
+
 bool Socket::create(int domain, int type, int protocol) 
 {
     sockfd = socket(domain, type, protocol);

@@ -7,6 +7,9 @@ public:
     UdpServer() = default;
     ~UdpServer();
 
+    UdpServer(const UdpServer&) = delete;
+    UdpServer& operator=(const UdpServer&) = delete;
+
     void start(const std::string &ip, int port);
     void run();
 

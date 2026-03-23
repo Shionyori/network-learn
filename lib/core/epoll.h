@@ -13,6 +13,9 @@ public:
     Epoll(int maxEvents = 1024);
     ~Epoll();
 
+    Epoll(const Epoll&) = delete;
+    Epoll& operator=(const Epoll&) = delete;
+
     bool add(Channel* channel);
     bool mod(Channel* channel);
     bool del(Channel* channel);

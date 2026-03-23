@@ -15,6 +15,11 @@ public:
     Buffer(size_t initSize = 1024);
     ~Buffer();
 
+    Buffer(const Buffer&) = delete;
+    Buffer& operator=(const Buffer&) = delete;
+    Buffer(Buffer&& other);
+    Buffer& operator=(Buffer&& other);
+
     ssize_t readFd(int fd, int* savedErrno);
     ssize_t writeFd(int fd, int* savedErrno);
 

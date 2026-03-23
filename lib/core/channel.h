@@ -20,6 +20,7 @@ private:
 
 public:
     Channel(int fd, Socket* sock = nullptr) : fd(fd), socket(sock), events(0), revents(0) {}
+    ~Channel() = default;
 
     // 禁止拷贝，允许移动
     Channel(const Channel&) = delete;

@@ -17,6 +17,9 @@ public:
     EventLoopThreadPool(EventLoop* baseLoop, size_t numThreads);
     ~EventLoopThreadPool() = default;
 
+    EventLoopThreadPool(const EventLoopThreadPool&) = delete;
+    EventLoopThreadPool& operator=(const EventLoopThreadPool&) = delete;
+
     void start();
     
     EventLoop* getNextLoop();

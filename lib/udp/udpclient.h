@@ -7,6 +7,9 @@ public:
     UdpClient() = default;
     ~UdpClient();
 
+    UdpClient(const UdpClient&) = delete;
+    UdpClient& operator=(const UdpClient&) = delete;
+
     void init();
     
     ssize_t sendTo(const std::string& data, const std::string &ip, int port);

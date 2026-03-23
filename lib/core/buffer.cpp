@@ -9,6 +9,23 @@ Buffer::Buffer(size_t initSize) : buffer(initSize), readIndex(0), writeIndex(0) 
 
 Buffer::~Buffer() {}
 
+Buffer::Buffer(Buffer&& other) : buffer(std::move(other.buffer)), readIndex(other.readIndex), writeIndex(other.writeIndex) {
+    other.readIndex = 0;
+    other.writeIndex = 0;
+}
+
+Buffer& Buffer::operator=(Buffer&& other) {
+    if (this != &other) {
+        buffer = std::move(other.buffer);
+        readIndex = other.readIndex;
+        writeIndex = other.writeIndex;
+
+        other.readIndex = 0;
+        other.writeIndex = 0;
+    }
+    return *this;
+}
+
 ssize_t Buffer::readFd(int fd, int* savedErrno)
 {
     char temp_buffer[50000];
