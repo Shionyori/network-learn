@@ -58,7 +58,7 @@ void EventLoop::loop()
                 activeChannels.push_back(channel);
             }
         }
-        // 处理所有就绪事件
+        // 处理所有就绪事件（分发事件到对应的 Channel）
         for (Channel *channel : activeChannels)
         {
             channel->handleEvent();

@@ -46,6 +46,12 @@ public:
     ssize_t recv(void* buf, size_t len, int flags = 0);
     std::string recv(size_t max_len = 1024, int flags = 0);
 
+    ssize_t sendTo(const void* data, size_t len, const std::string &ip, int port, int flags = 0);
+    ssize_t sendTo(const std::string& data, const std::string &ip, int port, int flags = 0);
+
+    ssize_t recvFrom(void* buf, size_t len, std::string &ip, int &port, int flags = 0);
+    std::string recvFrom(size_t max_len, std::string &ip, int &port, int flags = 0);
+
     // 工具函数
     void close() {
         if (sockfd >= 0) {

@@ -10,6 +10,7 @@ set(NL_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/core
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/socket
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/tcp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/udp
 )
 
 add_library(nl-core STATIC
@@ -35,12 +36,21 @@ add_library(nl-tcp STATIC
 target_link_libraries(nl-tcp PRIVATE nl-core nl-socket)
 target_include_directories(nl-tcp PUBLIC ${NL_INCLUDE_DIRS})
 
+add_library(nl-udp STATIC
+    lib/udp/udpserver.cpp
+    lib/udp/udpclient.cpp    
+)
+target_link_libraries(nl-udp PRIVATE nl-socket)
+target_include_directories(nl-udp PUBLIC ${NL_INCLUDE_DIRS})
+
 add_executable(nl-tcpserver src/tcp/demo_tcpserver.cpp)
 target_link_libraries(nl-tcpserver PRIVATE nl-tcp)
 
 add_executable(nl-tcpclient src/tcp/demo_tcpclient.cpp)
 target_link_libraries(nl-tcpclient PRIVATE nl-tcp)
 
-add_executable(nl-udpserver src/udp/server.cpp)
+add_executable(nl-udpserver src/udp/demo_udpserver.cpp)
+target_link_libraries(nl-udpserver PRIVATE nl-udp)
 
-add_executable(nl-udpclient src/udp/client.cpp)
+add_executable(nl-udpclient src/udp/demo_udpclient.cpp)
+target_link_libraries(nl-udpclient PRIVATE nl-udp)
